@@ -1,183 +1,182 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 
+# ML
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
-st.set_page_config(page_title="UX Audit System", layout="wide")
+# DL
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
 
-# Title
-st.title("🚀 Hybrid Website UX & Conversion Audit System")
+st.set_page_config(page_title="UX Audit AI System", layout="wide")
 
-# Sidebar
-st.sidebar.header("Navigation")
-option = st.sidebar.radio("Choose Input Type", ["Upload Dataset", "Enter Website URL"])
+st.title("🚀 Advanced UX & Conversion Audit System (ML + DL)")
 
-# -------------------------------
-# OPTION 1: DATASET UPLOAD
-# -------------------------------
-if option == "Upload Dataset":
-    st.subheader("📊 Upload Website Analytics Dataset")
+# Upload file
+file = st.file_uploader("📂 Upload Website Dataset (CSV)", type=["csv"])
 
-    file = st.file_uploader("Upload CSV File", type=["csv"])
+if file is not None:
 
-    if file is not None:
-        data = pd.read_csv(file)
+    data = pd.read_csv(file)
 
-        # Preview
-        st.write("### Dataset Preview")
+    # Create Tabs
+    tab1, tab2, tab3 = st.tabs(["📊 Data", "🤖 Models", "🎯 UX Insights"])
+
+    # -------------------------------
+    # TAB 1 → DATA
+    # -------------------------------
+    with tab1:
+        st.subheader("Dataset Preview")
         st.dataframe(data.head())
+        st.write("### Basic Statistics")
+        st.write(data.describe())
 
-        # -------------------------------
-        # MACHINE LEARNING MODEL
-        # -------------------------------
+    # -------------------------------
+    # TAB 2 → MODELS (ML + DL)
+    # -------------------------------
+    with tab2:
+
         if 'Revenue' in data.columns:
-            st.write("### 🤖 AI Prediction Model")
 
             data['Revenue'] = data['Revenue'].astype(int)
 
             features = ['Administrative', 'Informational', 'ProductRelated', 'BounceRates', 'ExitRates']
 
-            # Make sure required columns exist
-            if all(col in data.columns for col in features):
-                X = data[features]
-                y = data['Revenue']
+            X = data[features]
+            y = data['Revenue']
 
-                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-                model = RandomForestClassifier()
-                model.fit(X_train, y_train)
+            # 🔹 ML MODEL
+            st.subheader("🤖 Machine Learning Model")
 
-                y_pred = model.predict(X_test)
-                acc = accuracy_score(y_test, y_pred)
+            rf_model = RandomForestClassifier()
+            rf_model.fit(X_train, y_train)
 
-                st.metric("Model Accuracy", round(acc, 2))
+            rf_pred = rf_model.predict(X_test)
+            rf_acc = accuracy_score(y_test, rf_pred)
 
-        # -------------------------------
-        # BASIC STATS
-        # -------------------------------
-        st.write("### 📊 Basic Statistics")
-        st.write(data.describe())
+            st.metric("ML Accuracy (Random Forest)", round(rf_acc, 2))
 
-        # -------------------------------
-        # UX METRICS
-        # -------------------------------
-        bounce_rate = 0
-        exit_rate = 0
+            # 🔹 DL MODEL
+            st.subheader("🧠 Deep Learning Model")
 
-        if 'BounceRates' in data.columns:
+            X_train_dl = np.array(X_train)
+            X_test_dl = np.array(X_test)
+
+            model = Sequential()
+            model.add(Dense(16, input_dim=X_train.shape[1], activation='relu'))
+            model.add(Dense(8, activation='relu'))
+            model.add(Dense(1, activation='sigmoid'))
+
+            model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+            model.fit(X_train_dl, y_train, epochs=20, batch_size=10, verbose=0)
+
+            dl_loss, dl_acc = model.evaluate(X_test_dl, y_test, verbose=0)
+
+            st.metric("DL Accuracy (Neural Network)", round(dl_acc, 2))
+
+            # 🔹 COMPARISON
+            st.subheader("⚖️ Model Comparison")
+
+            st.write(f"ML Accuracy: {round(rf_acc,2)}")
+            st.write(f"DL Accuracy: {round(dl_acc,2)}")
+
+            if dl_acc > rf_acc:
+                st.success("Deep Learning performs better on this dataset")
+            else:
+                st.info("Machine Learning performs efficiently for this dataset")
+
+        else:
+            st.error("❌ Dataset must contain 'Revenue' column")
+
+    # -------------------------------
+    # TAB 3 → UX ANALYSIS
+    # -------------------------------
+    with tab3:
+
+        if all(col in data.columns for col in ['BounceRates', 'ExitRates', 'ProductRelated']):
+
             bounce_rate = data['BounceRates'].mean()
-            st.metric("Average Bounce Rate", round(bounce_rate, 2))
-
-        if 'ExitRates' in data.columns:
             exit_rate = data['ExitRates'].mean()
-            st.metric("Average Exit Rate", round(exit_rate, 2))
+            product_engagement = data['ProductRelated'].mean()
 
-        # -------------------------------
-        # UX SCORE SYSTEM
-        # -------------------------------
-        score = 10
-        issues = []
+            score = 10
+            issues = []
 
-        if bounce_rate > 0.5:
-            score -= 3
-            issues.append("High Bounce Rate")
+            # UX checks
+            if bounce_rate > 0.5:
+                score -= 3
+                issues.append("High Bounce Rate")
 
-        if exit_rate > 0.5:
-            score -= 2
-            issues.append("High Exit Rate")
+            if exit_rate > 0.5:
+                score -= 2
+                issues.append("High Exit Rate")
 
-        if 'ProductRelated' in data.columns:
-            if data['ProductRelated'].mean() < 20:
+            if product_engagement < 20:
                 score -= 2
                 issues.append("Low Product Engagement")
 
-        # Score display
-        st.write("### 🎯 UX Score")
-        st.metric("UX Score (out of 10)", score)
+            # Score
+            st.subheader("🎯 UX Score")
+            st.metric("UX Score (out of 10)", score)
+            st.progress(score / 10)
 
-        # Issues
-        if issues:
-            st.error("⚠️ Issues Found:")
-            for i in issues:
-                st.write(f"- {i}")
-        else:
-            st.success("✅ Excellent UX")
+            # Issues
+            if issues:
+                st.error("⚠️ Issues Found:")
+                for i in issues:
+                    st.write(f"- {i}")
+            else:
+                st.success("✅ Excellent UX")
 
-        # -------------------------------
-        # SOLUTIONS (UPGRADED)
-        # -------------------------------
-        st.write("### 💡 UX Improvement Solutions")
+            # Suggestions
+            st.subheader("💡 Suggestions")
 
-        if "High Bounce Rate" in issues:
-            st.error("🔴 High Bounce Rate Solutions")
-            st.write("- Improve page loading speed (optimize images, caching)")
-            st.write("- Add strong headline & clear value proposition")
-            st.write("- Improve mobile responsiveness")
-            st.write("- Reduce clutter and improve layout")
-            st.write("- Add clear Call-To-Action (CTA)")
+            if "High Bounce Rate" in issues:
+                st.write("✔ Improve landing page design & speed")
 
-        if "High Exit Rate" in issues:
-            st.error("🟠 High Exit Rate Solutions")
-            st.write("- Simplify checkout process")
-            st.write("- Reduce form fields")
-            st.write("- Add trust badges & reviews")
-            st.write("- Provide offers/discounts")
-            st.write("- Improve navigation flow")
+            if "High Exit Rate" in issues:
+                st.write("✔ Simplify checkout process")
 
-        if "Low Product Engagement" in issues:
-            st.error("🟡 Low Product Engagement Solutions")
-            st.write("- Use high-quality product images")
-            st.write("- Add detailed descriptions")
-            st.write("- Show ratings & reviews")
-            st.write("- Add product demo videos")
-            st.write("- Recommend related products")
+            if "Low Product Engagement" in issues:
+                st.write("✔ Improve product images & descriptions")
 
-        if not issues:
-            st.success("✅ Your UX is strong. Keep optimizing!")
+            if not issues:
+                st.write("🎉 Your UX is already strong!")
 
-        # -------------------------------
-        # VISUALIZATION
-        # -------------------------------
-        if 'BounceRates' in data.columns:
-            st.write("### 📈 Bounce Rate Distribution")
+            # Graph
+            st.subheader("📈 Bounce Rate Distribution")
             fig, ax = plt.subplots()
             ax.hist(data['BounceRates'], bins=20)
             st.pyplot(fig)
 
-            if bounce_rate > 0.5:
-                st.error("⚠️ High Bounce Rate → Poor UX")
-            else:
-                st.success("✅ Users are engaging well")
+            # -------------------------------
+            # DOWNLOAD REPORT
+            # -------------------------------
+            report = f"""
+UX AUDIT REPORT
 
-# -------------------------------
-# OPTION 2: WEBSITE URL
-# -------------------------------
-else:
-    st.subheader("🌐 Analyze Website UX")
+ML Accuracy: {round(rf_acc,2) if 'rf_acc' in locals() else 'N/A'}
+DL Accuracy: {round(dl_acc,2) if 'dl_acc' in locals() else 'N/A'}
 
-    url = st.text_input("Enter Website URL")
+UX Score: {score}/10
 
-    if st.button("Analyze"):
-        if url:
-            st.write(f"Analyzing: {url}")
+Issues:
+{', '.join(issues) if issues else 'None'}
 
-            # Dummy values (can upgrade later)
-            load_time = 4.5
-            bounce_rate = 0.65
+Suggestions:
+- Improve bounce rate
+- Optimize navigation
+- Enhance product engagement
+"""
 
-            st.metric("Page Load Time (s)", load_time)
-            st.metric("Bounce Rate", bounce_rate)
+            st.download_button("📥 Download Report", report, file_name="ux_report.txt")
 
-            if load_time > 3:
-                st.warning("⚠️ Slow Website → Improve speed (optimize images, hosting)")
-
-            if bounce_rate > 0.5:
-                st.error("⚠️ High Bounce Rate → Improve content & UX")
-
-            st.success("💡 Suggestions:")
-            st.write("- Improve loading speed")
-            st.write("- Simplify navigation")
-            st.write("- Reduce clutter")
+        else:
+            st.error("❌ Required columns missing (BounceRates, ExitRates, ProductRelated)")
