@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 
-st.set_page_config(page_title="UX Audit AI", layout="wide")
+st.set_page_config(page_title="UX Audit AI AND ML", layout="wide")
 
 # ---------- SIDEBAR ----------
 st.sidebar.title("🚀 UX Audit AI")
@@ -201,7 +201,6 @@ if mode == "🌐 URL Analyzer":
 
 
 # ---------- CSV MODE ----------
-# ---------- CSV MODE ----------
 elif mode == "📁 CSV Analyzer":
     st.header("📁 Upload CSV")
 
@@ -215,63 +214,23 @@ elif mode == "📁 CSV Analyzer":
         else:
             results = []
 
-            st.info("🔄 Running analysis on dataset...")
-
             for url in df["URL"]:
-                with st.spinner(f"Analyzing {url}..."):
-                    time.sleep(0.2)
-                    data = analyze_website(url)
-                    if data:
-                        results.append(data)
+                time.sleep(0.1)
+                data = analyze_website(url)
+                if data:
+                    results.append(data)
 
             result_df = pd.DataFrame(results)
+            
 
-            # ✅ DATA PREVIEW
             st.subheader("📊 Data Preview")
             st.dataframe(result_df)
 
-            # ✅ DOWNLOAD CSV
             st.download_button(
                 "⬇ Download Full Results CSV",
                 result_df.to_csv(index=False),
                 "full_results.csv"
             )
 
-            # ✅ AVERAGE METRICS
             st.subheader("📈 Average Scores")
             st.write(result_df.mean(numeric_only=True))
-
-            # ✅ REVENUE INSIGHTS
-            st.subheader("💰 Revenue Insights")
-            st.success(f"Current Avg Revenue: ${round(result_df['Revenue'].mean(),2)}")
-            st.info(f"Expected Avg Revenue After Fix: ${round(result_df['Expected Revenue'].mean(),2)}")
-
-            # ✅ VISUAL INSIGHTS
-            st.subheader("📊 Visual Insights")
-
-            # BAR CHART
-            st.subheader("📈 Score Comparison")
-            chart_data = result_df[["UX Score", "ML Score", "DL Score", "AI Score"]]
-            st.bar_chart(chart_data)
-
-            # PIE CHART
-            st.subheader("🥧 UX Score Distribution")
-
-            bins = ["Low", "Medium", "High"]
-            ux_levels = pd.cut(result_df["UX Score"], bins=[0, 50, 75, 100], labels=bins)
-
-            pie_data = ux_levels.value_counts()
-
-            fig, ax = plt.subplots()
-            ax.pie(pie_data, labels=pie_data.index, autopct="%1.1f%%")
-            st.pyplot(fig)
-
-            # ✅ COMPETITOR ANALYSIS (AVERAGE)
-            st.subheader("🏆 Competitor Analysis (Dataset Avg)")
-            competitor_chart(result_df["UX Score"].mean())
-
-            # ✅ AI SUGGESTIONS (DATASET LEVEL)
-            st.subheader("🤖 AI Suggestions (Overall)")
-            sample = result_df.iloc[0].to_dict()
-            for s in ai_suggestions(sample):
-                st.write(s)
