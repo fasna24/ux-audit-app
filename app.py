@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 
-st.set_page_config(page_title="UX Audit AI AND ML", layout="wide")
+st.set_page_config(page_title="UX Audit AI & ML", layout="wide")
 
 # ---------- SIDEBAR ----------
-st.sidebar.title("🚀 UX Audit AI")
+st.sidebar.title("🚀 Advanced UX Audit System for Website Experience Analysis")
 mode = st.sidebar.radio("Navigation", ["🌐 URL Analyzer", "📁 CSV Analyzer"])
 st.sidebar.success("Startup Dashboard Mode ON 🔥")
 
@@ -22,7 +22,6 @@ body {
     background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
     color: white;
 }
-
 .metric-card {
     padding: 20px;
     border-radius: 15px;
@@ -32,11 +31,9 @@ body {
     animation: slideUp 0.8s ease-in-out;
     transition: transform 0.3s ease;
 }
-
 .metric-card:hover {
     transform: translateY(-10px) scale(1.05);
 }
-
 .big-title {
     text-align: center;
     font-size: 34px;
@@ -44,12 +41,10 @@ body {
     color: #00f2ff;
     animation: fadeIn 1.2s ease-in;
 }
-
 @keyframes slideUp {
     from { transform: translateY(50px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
-
 @keyframes fadeIn {
     from {opacity: 0;}
     to {opacity: 1;}
@@ -99,9 +94,8 @@ def analyze_website(url):
         }
 
     except:
-        st.error("Error loading website")
+        st.error(f"Error loading website: {url}")
         return None
-
 
 def competitor_chart(score):
     comp = [
@@ -109,15 +103,12 @@ def competitor_chart(score):
         score - random.randint(5, 15),
         score + random.randint(3, 10)
     ]
-
     fig, ax = plt.subplots()
     ax.bar(["Your Site", "Competitor A", "Competitor B"], comp)
     st.pyplot(fig)
 
-
 def ai_suggestions(data):
     suggestions = []
-
     if data["Load Time"] > 2:
         suggestions.append("⚡ Improve loading speed")
     if data["Bounce Rate"] > 50:
@@ -126,34 +117,24 @@ def ai_suggestions(data):
         suggestions.append("🖼️ Add more visuals")
     if data["Links"] < 10:
         suggestions.append("🔗 Improve internal linking")
-
     if not suggestions:
         suggestions.append("✅ Website looks optimized!")
-
     return suggestions
-
 
 def export_pdf(data):
     doc = SimpleDocTemplate("UX_Report.pdf")
     styles = getSampleStyleSheet()
-
     content = [Paragraph("UX Audit AI Report", styles["Title"])]
-
     for k, v in data.items():
         content.append(Paragraph(f"{k}: {v}", styles["Normal"]))
-
     doc.build(content)
-
 
 # ---------- URL MODE ----------
 if mode == "🌐 URL Analyzer":
     st.header("🌐 Analyze Website")
-
     url = st.text_input("Enter Website URL")
-
     if st.button("Analyze 🚀"):
         data = analyze_website(url)
-
         if data:
             # SCORE CARDS
             cols = st.columns(4)
@@ -175,7 +156,7 @@ if mode == "🌐 URL Analyzer":
 
             # REVENUE
             st.success(f"💰 Current Revenue: ${data['Revenue']}")
-            st.info(f"🚀 After Fix Revenue: ${data['Expected Revenue']}")
+            st.info(f"🚀 Expected Revenue After Fix: ${data['Expected Revenue']}")
 
             # COMPETITOR
             st.subheader("🏆 Competitor Analysis")
@@ -186,7 +167,7 @@ if mode == "🌐 URL Analyzer":
             for s in ai_suggestions(data):
                 st.write(s)
 
-            # DOWNLOAD
+            # DOWNLOAD CSV
             df = pd.DataFrame([data])
             st.download_button(
                 "⬇ Download CSV",
@@ -194,43 +175,71 @@ if mode == "🌐 URL Analyzer":
                 "ux_results.csv"
             )
 
-            # PDF
+            # PDF EXPORT
             if st.button("📄 Export PDF"):
                 export_pdf(data)
                 st.success("PDF Generated!")
 
-
 # ---------- CSV MODE ----------
 elif mode == "📁 CSV Analyzer":
     st.header("📁 Upload CSV")
-
     file = st.file_uploader("Upload CSV with URLs", type=["csv"])
-
     if file:
         df = pd.read_csv(file)
-
         if "URL" not in df.columns:
             st.error("CSV must contain 'URL' column")
         else:
             results = []
-
+            st.info("🔄 Running analysis on dataset...")
             for url in df["URL"]:
-                time.sleep(0.1)
-                data = analyze_website(url)
-                if data:
-                    results.append(data)
+                with st.spinner(f"Analyzing {url}..."):
+                    time.sleep(0.2)
+                    data = analyze_website(url)
+                    if data:
+                        results.append(data)
 
             result_df = pd.DataFrame(results)
-            
 
+            # DATA PREVIEW
             st.subheader("📊 Data Preview")
             st.dataframe(result_df)
 
+            # DOWNLOAD CSV
             st.download_button(
                 "⬇ Download Full Results CSV",
                 result_df.to_csv(index=False),
                 "full_results.csv"
             )
 
+            # AVERAGE METRICS
             st.subheader("📈 Average Scores")
             st.write(result_df.mean(numeric_only=True))
+
+            # REVENUE INSIGHTS
+            st.subheader("💰 Revenue Insights")
+            st.success(f"Current Avg Revenue: ${round(result_df['Revenue'].mean(),2)}")
+            st.info(f"Expected Avg Revenue After Fix: ${round(result_df['Expected Revenue'].mean(),2)}")
+
+            # VISUAL INSIGHTS
+            st.subheader("📊 Visual Insights")
+            st.subheader("📈 Score Comparison")
+            chart_data = result_df[["UX Score", "ML Score", "DL Score", "AI Score"]]
+            st.bar_chart(chart_data)
+
+            st.subheader("🥧 UX Score Distribution")
+            bins = ["Low", "Medium", "High"]
+            ux_levels = pd.cut(result_df["UX Score"], bins=[0, 50, 75, 100], labels=bins)
+            pie_data = ux_levels.value_counts()
+            fig, ax = plt.subplots()
+            ax.pie(pie_data, labels=pie_data.index, autopct="%1.1f%%")
+            st.pyplot(fig)
+
+            # COMPETITOR ANALYSIS (AVERAGE)
+            st.subheader("🏆 Competitor Analysis (Dataset Avg)")
+            competitor_chart(result_df["UX Score"].mean())
+
+            # AI SUGGESTIONS (DATASET LEVEL)
+            st.subheader("🤖 AI Suggestions (Overall)")
+            sample = result_df.iloc[0].to_dict()
+            for s in ai_suggestions(sample):
+                st.write(s)
